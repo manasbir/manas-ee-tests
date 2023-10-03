@@ -40,17 +40,25 @@ async fn main() -> Result<()> {
     //     .sum::<f64>())?;
 
     let liquidity: U256 =
-        U256::from(478057209076417332255322960494178308u128) * U256::from(100_000_000_000_000u64);
+        U256::from(478057209076417332255322960494178308u128) * U256::from(1_000_000_000_000_000u64);
 
-    let new_price: (U256, U256, Vec<uniswap_v2::Movement>) = uniswap_v2::simulate_trades(liquidity, start_price, trades, 3)?;
+    let new_price_0: (U256, U256, Vec<uniswap_v2::Movement>) = uniswap_v2::simulate_trades(liquidity, start_price, trades.clone(), 3)?;
 
-    let file = std::fs::File::create("trade_info/data.json")?;
+    let file = std::fs::File::create("trade_info/order_book_data.json")?;
     let data = serde_json::to_string_pretty(&trade_data)?;
     std::io::Write::write_all(&mut std::io::BufWriter::new(file), data.as_bytes())?;
-    let file = std::fs::File::create("trade_info/uni_movement.json")?;
-    let data = serde_json::to_string_pretty(&new_price.2)?;
+    let file = std::fs::File::create("trade_info/uni_movement_high_liquidity.json")?;
+    let data = serde_json::to_string_pretty(&new_price_0.2)?;
     std::io::Write::write_all(&mut std::io::BufWriter::new(file), data.as_bytes())?;
 
+    let liquidity: U256 =
+        U256::from(478057209076417332255322960494178308u128) * U256::from(1_000_000_000_000u64);
+
+    let new_price_1: (U256, U256, Vec<uniswap_v2::Movement>) = uniswap_v2::simulate_trades(liquidity, start_price, trades, 3)?;
+
+    let file = std::fs::File::create("trade_info/uni_movement_low_liquidity.json")?;
+    let data = serde_json::to_string_pretty(&new_price_1.2)?;
+    std::io::Write::write_all(&mut std::io::BufWriter::new(file), data.as_bytes())?;
 
     println!("start price: {}", format_ether(start_price));
     println!("end price: {}", format_ether(end_price));
@@ -58,9 +66,12 @@ async fn main() -> Result<()> {
     println!("num of sells: {}", num_of_sells);
     println!("buy amount: {}", format_ether(buy_amount));
     println!("sell amount: {}", format_ether(sell_amount));
-    println!("univ2 liquidity pools: {:?}", (new_price.0, new_price.1));
-    println!("univ2 liquidity pools: {:?}", new_price.0 * new_price.1);
-    println!("univ2 new price: {}", new_price.0 / new_price.1);
+    println!("univ2 liquidity pools: {:?}", (new_price_0.0, new_price_0.1));
+    println!("univ2 liquidity pools: {:?}", new_price_0.0 * new_price_0.1);
+    println!("univ2 new price: {}", new_price_0.0 / new_price_0.1);
+    println!("univ2 liquidity pools: {:?}", (new_price_1.0, new_price_1.1));
+    println!("univ2 liquidity pools: {:?}", new_price_1.0 * new_price_1.1);
+    println!("univ2 new price: {}", new_price_1.0 / new_price_1.1);
 
     Ok(())
 }

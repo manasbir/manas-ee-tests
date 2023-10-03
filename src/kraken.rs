@@ -111,12 +111,13 @@ pub struct TickData {
     pub trade_id: u64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Trade {
     pub price: U256,
     pub amount: U256,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum TradeType {
     Buy(Trade),
     Sell(Trade)

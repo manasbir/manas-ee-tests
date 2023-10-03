@@ -21,15 +21,32 @@ async fn main() -> Result<()> {
     let mut buy_amount: U256 = U256::zero();
     let mut sell_amount: U256 = U256::zero();
 
+    let mut highest_buy: U256 = U256::zero();
+    let mut highest_sell: U256 = U256::zero();
+    let mut lowest_buy: U256 = U256::MAX;
+    let mut lowest_sell: U256 = U256::MAX;
+
     for trade in trades.iter() {
         match trade {
             kraken::TradeType::Buy(trade) => {
                 num_of_buys += 1;
                 buy_amount += trade.amount;
+                if trade.price > highest_buy {
+                    highest_buy = trade.price;
+                }
+                if trade.price < lowest_buy {
+                    lowest_buy = trade.price;
+                }
             }
             kraken::TradeType::Sell(trade) => {
                 num_of_sells += 1;
                 sell_amount += trade.amount;
+                if trade.price > highest_sell {
+                    highest_sell = trade.price;
+                }
+                if trade.price < lowest_sell {
+                    lowest_sell = trade.price;
+                }
             }
         }
     }
@@ -68,10 +85,14 @@ async fn main() -> Result<()> {
     println!("sell amount: {}", format_ether(sell_amount));
     println!("univ2 liquidity pools: {:?}", (new_price_0.0, new_price_0.1));
     println!("univ2 liquidity pools: {:?}", new_price_0.0 * new_price_0.1);
-    println!("univ2 new price: {}", new_price_0.0 / new_price_0.1);
+    println!("univ2 new price: {}", new_price_0.0.as_u128() as f64 / new_price_0.1.as_u128() as f64);
     println!("univ2 liquidity pools: {:?}", (new_price_1.0, new_price_1.1));
     println!("univ2 liquidity pools: {:?}", new_price_1.0 * new_price_1.1);
-    println!("univ2 new price: {}", new_price_1.0 / new_price_1.1);
+    println!("univ2 new price: {}", new_price_1.0.as_u128() as f64 / new_price_1.1.as_u128() as f64);
+    println!("highest buy: {}", format_ether(highest_buy));
+    println!("highest sell: {}", format_ether(highest_sell));
+    println!("lowest buy: {}", format_ether(lowest_buy));
+    println!("lowest sell: {}", format_ether(lowest_sell));
 
     Ok(())
 }

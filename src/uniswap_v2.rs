@@ -1,6 +1,7 @@
 use crate::kraken::TradeType;
 use anyhow::Result;
 use ethers::{types::U256, utils::format_ether};
+use serde::Serialize;
 
 #[derive(Debug)]
 pub struct TradeWei {
@@ -13,10 +14,12 @@ pub fn simulate_trades(
     start_price: U256,
     trades: Vec<TradeType>,
     fees: u32,
-) -> Result<(U256, U256)> {
+) -> Result<(U256, U256, Vec<Movement>)> {
     // liquidity is our k
     // so main liquidity is k / intial eth price
     // x = eth reserve
+    let mut movement = Vec::new();
+
 
     let y = liquidity / U256::from((format_ether(start_price).parse::<f64>()? * 10_000f64) as u128)
         * U256::from(10_000u64);
@@ -26,11 +29,17 @@ pub fn simulate_trades(
 
     let mut liquidity = (x, y);
 
+    movement.push( Movement { x: liquidity.0.as_u128(), y: liquidity.1.as_u128() });
+
     for trade in trades {
         liquidity = simulate_trade(liquidity, trade, fees);
+        movement.push(Movement {
+            x: liquidity.0.as_u128(),
+            y: liquidity.1.as_u128(),
+        });
     }
 
-    Ok(liquidity)
+    Ok((liquidity.0, liquidity.1, movement))
 }
 
 pub fn simulate_trade(liquidity: (U256, U256), trade: TradeType, fees: u32) -> (U256, U256) {
@@ -85,4 +94,10 @@ pub fn simulate_trade(liquidity: (U256, U256), trade: TradeType, fees: u32) -> (
             (new_y, new_x)
         }
     }
+}
+
+#[derive(Debug, Serialize)]
+pub struct Movement {
+    pub x: u128,
+    pub y: u128,
 }

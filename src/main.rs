@@ -14,7 +14,7 @@ async fn main() -> Result<()> {
 
     let client = KrakenClient::new(api_key).await;
 
-    let (trades, start_price, end_price) = client.get_most_recent_trades("ethusd").await?;
+    let (trades, start_price, end_price, trade_data) = client.get_most_recent_trades("ethusd").await?;
 
     let mut num_of_buys: u32 = 0;
     let mut num_of_sells: u32 = 0;
@@ -42,7 +42,15 @@ async fn main() -> Result<()> {
     let liquidity: U256 =
         U256::from(478057209076417332255322960494178308u128) * U256::from(100_000_000_000_000u64);
 
-    let new_price = uniswap_v2::simulate_trades(liquidity, start_price, trades, 3)?;
+    let new_price: (U256, U256, Vec<uniswap_v2::Movement>) = uniswap_v2::simulate_trades(liquidity, start_price, trades, 3)?;
+
+    let file = std::fs::File::create("trade_info/data.json")?;
+    let data = serde_json::to_string_pretty(&trade_data)?;
+    std::io::Write::write_all(&mut std::io::BufWriter::new(file), data.as_bytes())?;
+    let file = std::fs::File::create("trade_info/uni_movement.json")?;
+    let data = serde_json::to_string_pretty(&new_price.2)?;
+    std::io::Write::write_all(&mut std::io::BufWriter::new(file), data.as_bytes())?;
+
 
     println!("start price: {}", format_ether(start_price));
     println!("end price: {}", format_ether(end_price));
@@ -50,7 +58,7 @@ async fn main() -> Result<()> {
     println!("num of sells: {}", num_of_sells);
     println!("buy amount: {}", format_ether(buy_amount));
     println!("sell amount: {}", format_ether(sell_amount));
-    println!("univ2 liquidity pools: {:?}", new_price);
+    println!("univ2 liquidity pools: {:?}", (new_price.0, new_price.1));
     println!("univ2 liquidity pools: {:?}", new_price.0 * new_price.1);
     println!("univ2 new price: {}", new_price.0 / new_price.1);
 

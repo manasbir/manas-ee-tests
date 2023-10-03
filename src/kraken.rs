@@ -1,6 +1,6 @@
 use anyhow::Result;
 use ethers::{utils::parse_ether, types::U256};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 pub struct KrakenClient {
     pub client: reqwest::Client,
@@ -45,7 +45,7 @@ impl KrakenClient {
     pub async fn get_most_recent_trades(
         &self,
         pair: &str,
-    ) -> Result<(Vec<TradeType>, U256, U256)> {
+    ) -> Result<(Vec<TradeType>, U256, U256, Vec<TradeJsonData>)> {
         let url = format!(
             "https://api.kraken.com/0/public/Trades?pair={}&limit=1000",
             pair
@@ -63,20 +63,29 @@ impl KrakenClient {
         let end_price = parse_ether(&res.result.xethzusd[res.result.xethzusd.len() - 1].price)?;
 
         let mut trades = Vec::new();
+        let mut json_data = Vec::new();
 
         for raw_trade in res.result.xethzusd {
             let trade = Trade {
-                price: parse_ether(raw_trade.price)?,
-                amount: parse_ether(raw_trade.volume)?,
+                price: parse_ether(&raw_trade.price)?,
+                amount: parse_ether(&raw_trade.volume)?,
             };
             if raw_trade.buy_sell == "b" {
                 trades.push(TradeType::Buy(trade));
             } else {
                 trades.push(TradeType::Sell(trade));
             }
+
+            let json_info = TradeJsonData {
+                price: raw_trade.price,
+                amount: raw_trade.volume,
+                buy_sell: raw_trade.buy_sell,
+            };
+
+            json_data.push(json_info);
         }
 
-        Ok((trades, start_price, end_price))
+        Ok((trades, start_price, end_price, json_data))
     }
 }
 
@@ -111,4 +120,11 @@ pub struct Trade {
 pub enum TradeType {
     Buy(Trade),
     Sell(Trade)
+}
+
+#[derive(Debug, Serialize)]
+pub struct TradeJsonData {
+    pub price: String,
+    pub amount: String,
+    pub buy_sell: String,
 }

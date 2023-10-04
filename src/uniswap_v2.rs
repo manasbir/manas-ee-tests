@@ -1,7 +1,7 @@
 use crate::kraken::TradeType;
 use anyhow::Result;
 use ethers::{types::U256, utils::format_ether};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub struct TradeWei {
@@ -20,7 +20,6 @@ pub fn simulate_trades(
     // x = eth reserve
     let mut movement = Vec::new();
 
-
     let y = liquidity / U256::from((format_ether(start_price).parse::<f64>()? * 10_000f64) as u128)
         * U256::from(10_000u64);
     let y = y.integer_sqrt();
@@ -29,7 +28,10 @@ pub fn simulate_trades(
 
     let mut liquidity = (x, y);
 
-    movement.push( Movement { x: liquidity.0.as_u128(), y: liquidity.1.as_u128() });
+    movement.push(Movement {
+        x: liquidity.0.as_u128(),
+        y: liquidity.1.as_u128(),
+    });
 
     for trade in trades {
         liquidity = simulate_trade(liquidity, trade, fees);
@@ -66,7 +68,7 @@ pub fn simulate_trade(liquidity: (U256, U256), trade: TradeType, fees: u32) -> (
             let dx = trade.amount;
 
             let dy = (k / (x - dx)) - y;
-            let dy = dy - (dy * U256::from(fees) / 10_00);
+            let dy = dy - (dy * U256::from(fees) / 1_000);
 
             let new_x = x - dx;
             let new_y = y + dy;
@@ -86,7 +88,7 @@ pub fn simulate_trade(liquidity: (U256, U256), trade: TradeType, fees: u32) -> (
             let dx = trade.amount;
 
             let dy = (k / (x - dx)) - y;
-            let dy = dy - (dy * U256::from(fees) / 10_00);
+            let dy = dy - (dy * U256::from(fees) / 1_000);
 
             let new_x = x - dx;
             let new_y = y + dy;
@@ -96,7 +98,7 @@ pub fn simulate_trade(liquidity: (U256, U256), trade: TradeType, fees: u32) -> (
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Movement {
     pub x: u128,
     pub y: u128,

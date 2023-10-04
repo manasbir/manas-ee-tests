@@ -1,5 +1,5 @@
 use anyhow::Result;
-use ethers::{utils::parse_ether, types::U256};
+use ethers::{types::U256, utils::parse_ether};
 use serde::{Deserialize, Serialize};
 
 pub struct KrakenClient {
@@ -23,14 +23,8 @@ impl KrakenClient {
         Self { client, api_key }
     }
 
-    pub async fn get_orderbook_data(
-        &self,
-        pair: &str,
-    ) -> Result<serde_json::Value> {
-        let url = format!(
-            "https://api.kraken.com/0/public/Trades?pair={}",
-            pair
-        );
+    pub async fn get_orderbook_data(&self, pair: &str) -> Result<serde_json::Value> {
+        let url = format!("https://api.kraken.com/0/public/Trades?pair={}", pair);
         let value = self
             .client
             .get(&url)
@@ -120,10 +114,10 @@ pub struct Trade {
 #[derive(Debug, Clone, Copy)]
 pub enum TradeType {
     Buy(Trade),
-    Sell(Trade)
+    Sell(Trade),
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TradeJsonData {
     pub price: String,
     pub amount: String,
